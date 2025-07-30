@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="card">
+            <img src="../shared/logo.png" alt="Mental Health Support" class="logo">
+            <h1>Student Portal</h1>
+            <div class="input-group">
+                <label for="code">Enter Access Code:</label>
+                <input type="text" id="code" placeholder="e.g. STUD123">
+            </div>
+            <button class="primary-btn" onclick="verifyCode()">Login</button>
+            <p id="error" class="error-text"></p>
+        </div>
+    </div>
+    
+    <script>
+        async function verifyCode() {
+            const code = document.getElementById('code').value.trim();
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = '';
+            
+            if (!code) {
+                errorElement.textContent = 'Please enter your access code';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/verify-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+                });
+                
+                if (!response.ok) {
+                const errorData = await response.json();
+                errorElement.textContent = errorData.error || 'Invalid access code';
+                return;
+                }
+                
+                const { token } = await response.json();
+                localStorage.setItem('studentToken', token);
+                localStorage.setItem('studentId', code);
+                window.location.href = 'dashboard.html';
+                
+            } catch (err) {
+                console.error('Login error:', err);
+                errorElement.textContent = 'Network error. Please check: \n' + 
+                '1. Mock school server is running\n' +
+                '2. No browser extensions blocking requests\n' +
+                '3. Correct URL in fetch call';
+            }
+            }
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="../shared/logo-small.png" alt="Logo" class="logo-small">
+            <h1>Student Dashboard</h1>
+            <div class="user-info">
+                <span>ID: <span id="student-id"></span></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Mood Tracker</a>
+            <a href="#">Chat</a>
+            <a href="#">Appointments</a>
+            <a href="#">Resources</a>
+        </nav>
+    </header>
+    
+    <main class="dashboard-grid">
+        <div class="card">
+            <h2><span>😊</span> Today's Mood</h2>
+            <div class="mood-display">
+                <div id="today-mood">-</div>
+                <button class="secondary-btn" onclick="location.href='mood_tracker.html'">
+                    Update Mood
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2><span>📊</span> Mood History</h2>
+            <canvas id="mood-chart"></canvas>
+        </div>
+        
+        <div class="card">
+            <h2><span>⏰</span> Upcoming Appointments</h2>
+            <div id="appointments-list" class="appointments-list"></div>
+            <button class="primary-btn" onclick="location.href='appointments.html'">
+                Schedule Appointment
+            </button>
+        </div>
+        
+        <div class="card">
+            <h2><span>💬</span> Recent Chat</h2>
+            <div id="recent-chat" class="recent-chat"></div>
+            <button class="primary-btn" onclick="location.href='chat.html'">
+                Start New Chat
+            </button>
+        </div>
+    </main>
+    
+    <script src="js/student.js"></script>
+    <script>
+        // Display student ID
+        document.getElementById('student-id').textContent = localStorage.getItem('studentId');
+        
+        // Initialize dashboard
+        loadDashboardData();
+        
+        function logout() {
+            localStorage.removeItem('studentToken');
+            localStorage.removeItem('studentId');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
