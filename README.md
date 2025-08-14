@@ -83,5 +83,5 @@ cd backend/api
 node server.js
 
 cd ../mock-school-server
-node server.js
+node index.js
 Project will run on http://localhost:3000
