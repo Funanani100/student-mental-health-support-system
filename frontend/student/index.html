@@ -1,62 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Login</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/index.css">
+
 </head>
 <body>
-    <div class="login-container">
-        <div class="card">
-            <img src="../shared/logo.png" alt="Mental Health Support" class="logo">
-            <h1>Student Portal</h1>
-            <div class="input-group">
-                <label for="code">Enter Access Code:</label>
-                <input type="text" id="code" placeholder="e.g. STUD123">
-            </div>
-            <button class="primary-btn" onclick="verifyCode()">Login</button>
-            <p id="error" class="error-text"></p>
-        </div>
+
+  <!-- Login Page -->
+  <div id="loginPage" class="login-container">
+    <div class="card">
+      <div class="login-logo">
+        <i class="fas fa-brain"></i>
+        <h1 style="font-size:20px;margin:0">MindMate</h1>
+      </div>
+
+      <h2 style="font-size:16px;margin:6px 0 12px;">Login To Student Dashboard</h2>
+
+      <div class="input-group">
+        <input type="text" id="code" placeholder="Enter your access code" aria-label="access code">
+      </div>
+
+      <!-- removed inline onclick to avoid double-calls -->
+      <button class="primary-btn" id="loginBtn" type="button"><i class="fas fa-lock"></i> Login</button>
+
+      <p id="error" class="error-text" role="alert" aria-live="polite"></p>
     </div>
-    
-    <script>
-        async function verifyCode() {
-            const code = document.getElementById('code').value.trim();
-            const errorElement = document.getElementById('error');
-            errorElement.textContent = '';
-            
-            if (!code) {
-                errorElement.textContent = 'Please enter your access code';
-                return;
-            }
-            
-            try {
-                const response = await fetch('http://localhost:3001/api/verify-code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code })
-                });
-                
-                if (!response.ok) {
-                const errorData = await response.json();
-                errorElement.textContent = errorData.error || 'Invalid access code';
-                return;
-                }
-                
-                const { token } = await response.json();
-                localStorage.setItem('studentToken', token);
-                localStorage.setItem('studentId', code);
-                window.location.href = 'dashboard.html';
-                
-            } catch (err) {
-                console.error('Login error:', err);
-                errorElement.textContent = 'Network error. Please check: \n' + 
-                '1. Mock school server is running\n' +
-                '2. No browser extensions blocking requests\n' +
-                '3. Correct URL in fetch call';
-            }
-            }
-    </script>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const codeInput = document.getElementById('code');
+      const loginBtn = document.getElementById('loginBtn');
+
+      // Focus input
+      if (codeInput) codeInput.focus();
+
+      // Remove any old mockToken leftover from previous experiments (safety)
+      if (localStorage.getItem('mockToken')) localStorage.removeItem('mockToken');
+
+      // Add event listener once
+      if (loginBtn) loginBtn.addEventListener('click', verifyCode);
+
+      // Enter to submit
+      if (codeInput) codeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') verifyCode();
+      });
+    });
+
+    async function verifyCode() {
+      const codeEl = document.getElementById('code');
+      const errorEl = document.getElementById('error');
+      const loginBtn = document.getElementById('loginBtn');
+
+      const code = codeEl ? codeEl.value.trim() : '';
+
+      // Reset UI state
+      if (errorEl) errorEl.textContent = '';
+      if (loginBtn) {
+        loginBtn.classList.remove('pulse');
+        loginBtn.disabled = false;
+      }
+
+      if (!code) {
+        if (errorEl) errorEl.textContent = 'Please enter your access code';
+        if (loginBtn) loginBtn.classList.add('pulse');
+        return;
+      }
+
+      try {
+        // Show loading
+        if (loginBtn) {
+          loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+          loginBtn.disabled = true;
+        }
+
+        // 1) Verify with mock school server (returns mock token)
+        const verifyRes = await fetch('http://localhost:3001/api/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+
+        if (!verifyRes.ok) {
+          // network ok but server returned error (invalid code)
+          const errBody = await verifyRes.json().catch(()=>({}));
+          throw new Error(errBody.error || 'Invalid access code');
+        }
+
+        const verifyData = await verifyRes.json();
+        const mockToken = verifyData.token;
+        const mockStudentId = verifyData.studentId || code;
+
+        if (!mockToken) throw new Error('Verification service returned no token');
+
+        // 2) Create session in main backend (send mock token in Authorization)
+        const sessionRes = await fetch('http://localhost:3000/api/sessions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${mockToken}`
+          },
+          body: JSON.stringify({}) // optional
+        });
+
+        if (!sessionRes.ok) {
+          // Distinguish network vs server error
+          let errText = 'Failed to create session on main server';
+          try {
+            const errBody = await sessionRes.json();
+            errText = errBody.error || errText;
+          } catch (e) {
+            // JSON parse failed
+          }
+          throw new Error(errText);
+        }
+
+        const sessionData = await sessionRes.json();
+
+        // server should return the APP token in studentToken (consistent with server.js)
+        const appToken = sessionData.studentToken || sessionData.appToken || sessionData.token;
+        if (!appToken) {
+          console.error('Unexpected /api/sessions response:', sessionData);
+          throw new Error('No app token returned by server');
+        }
+
+        // Save app token to localStorage (CRITICAL: use app token, not mock token)
+        localStorage.setItem('studentToken', appToken);
+
+        // Save student id (prefer server-provided)
+        const finalStudentId = sessionData.studentId || mockStudentId || code;
+        localStorage.setItem('studentId', finalStudentId);
+
+        // Clear any leftover mockToken variable (safety)
+        if (localStorage.getItem('mockToken')) localStorage.removeItem('mockToken');
+
+        // Success UI & redirect
+        if (loginBtn) loginBtn.innerHTML = '<i class="fas fa-check"></i> Login Successful!';
+        setTimeout(() => window.location.href = 'dashboard.html', 600);
+
+      } catch (err) {
+        console.error('Login error:', err);
+
+        // Restore button
+        if (loginBtn) {
+          loginBtn.innerHTML = '<i class="fas fa-lock"></i> Login';
+          loginBtn.disabled = false;
+          loginBtn.classList.add('pulse');
+        }
+
+        if (errorEl) {
+          if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+            errorEl.textContent = 'Network error. Check servers:\n• Mock server running on port 3001\n• Main server running on port 3000\n• No firewall blocking requests';
+          } else {
+            errorEl.textContent = err.message || 'Authentication failed';
+          }
+        }
+      }
+    }
+  </script>
+
 </body>
 </html>

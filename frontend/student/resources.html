@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindMate - Resources</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    :root{
+      --primary: #5E97F6;
+      --primary-light: #8ab3ff;
+      --secondary: #76C7C0;
+      --dark: #2C3E50;
+      --light: #F8FAFC;
+      --gray: #E0E6ED;
+      --text: #34495E;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      --transition: all 0.3s ease;
+      --warning: #FFC107;
+    }
+
+    /* Resources Section */
+    .resources{background: linear-gradient(135deg,#e0f7fa,#b2ebf2); padding:48px 0; border-radius:18px; margin:32px 0;}
+    .section-title{text-align:center;margin-bottom:24px;}
+    .section-title h2{font-size:1.8rem;color:var(--dark);margin-bottom:6px;}
+    .section-title p{color:var(--text);opacity:0.9;}
+
+    .search-container{max-width:700px;margin:0 auto 18px;position:relative;}
+    .search-container input{
+      width:100%;
+      padding:12px 18px 12px 46px;
+      border-radius:50px;
+      border:2px solid var(--gray);
+      font-size:1rem;
+    }
+    .search-container i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--primary);font-size:1.05rem;}
+
+    .category-tabs{display:flex;justify-content:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+    .category-tab{padding:8px 16px;background:var(--light);border-radius:30px;cursor:pointer;transition:var(--transition);font-weight:600;}
+    .category-tab.active, .category-tab:hover{background:var(--primary);color:white;}
+
+    .resource-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-top:10px;}
+
+    .resource-card{background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);transition:var(--transition);display:flex;flex-direction:column;}
+    .resource-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(0,0,0,0.12);}
+
+    .resource-icon{height:120px;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-size:2.6rem;color:white;}
+    .resource-content{padding:18px 16px;flex:1;display:flex;flex-direction:column;gap:10px;}
+    .resource-content h3{font-size:1.1rem;color:var(--dark);}
+    .resource-content p{color:var(--text);font-size:0.95rem;flex:0;}
+    .rating{color:var(--warning);font-size:0.95rem;}
+    .btn-resource{display:inline-block;padding:8px 16px;border-radius:30px;background:var(--primary);color:white;text-decoration:none;font-weight:600;margin-top:auto;align-self:flex-start;transition:var(--transition);}
+    .btn-resource:hover{background:var(--primary-light);}
+
+    /* Footer */
+    footer{background:var(--dark);color:white;padding:40px 0 20px;margin-top:20px;border-top-left-radius:8px;border-top-right-radius:8px;}
+    .footer-content{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px;margin-bottom:24px;}
+    .footer-column h3{margin-bottom:12px;font-size:1.05rem;}
+    .footer-column p, .footer-column li{color:#d0d6df;font-size:0.95rem;margin-bottom:8px;}
+    .footer-column ul{list-style:none;padding:0;margin:0;}
+    .footer-column a{color:#c9d2df;text-decoration:none;transition:var(--transition);}
+    .footer-column a:hover{color:white;}
+    .copyright{text-align:center;color:#bfc9d6;font-size:0.9rem;border-top:1px solid rgba(255,255,255,0.05);padding-top:14px;}
+
+    /* Responsive tweaks */
+    @media (max-width:768px){
+      nav ul{gap:10px;font-size:0.95rem;}
+      .resource-icon{height:100px;font-size:2rem;}
+      .search-container{padding:0 10px;}
+    }
+  </style>
+</head>
+<body>
+  <!-- Header / Nav -->
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div style="display:flex;align-items:center;gap:18px;width:100%;justify-content:space-between;">
+          <div class="logo">
+            <i class="fas fa-brain"></i>
+            <span>MindMate</span>
+          </div>
+
+          <nav>
+            <ul>
+              <li><a href="dashboard.html" class="active">Dashboard</a></li>
+              <li><a href="dashboard.html" id="moodLink">Mood Tracker</a></li>
+              <li><a href="chat.html" id="chatLink">Chat</a></li>
+              <li><a href="appointments.html" id="appointmentLink">Appointments</a></li>
+              <li><a href="resources.html" id="resourcesLink">Resources</a></li>
+            </ul>
+          </nav>
+
+          <div class="user-actions">
+            <div class="user-info">
+              <i class="fas fa-user-circle"></i>
+              <span id="studentIdDisplay">—</span>
+            </div>
+            <button class="btn btn-primary" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Resources Section -->
+  <main>
+    <section class="resources" id="resourcesSection">
+      <div class="container">
+        <div class="section-title">
+          <h2>Self-Help Resources</h2>
+          <p>Curated content to support your mental wellness journey</p>
+        </div>
+
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" id="resourceSearch" placeholder="Search resources...">
+        </div>
+
+        <div class="category-tabs" id="categoryTabs">
+          <div class="category-tab active" data-category="all">All</div>
+          <div class="category-tab" data-category="stress">Stress</div>
+          <div class="category-tab" data-category="anxiety">Anxiety</div>
+          <div class="category-tab" data-category="sleep">Sleep</div>
+          <div class="category-tab" data-category="focus">Focus</div>
+        </div>
+
+        <div class="resource-grid" id="resourceContainer">
+          <!-- Resource cards injected by JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <h3>MindMate</h3>
+          <p>A safe space for students to prioritise mental health and emotional well-being.</p>
+          <p><i class="fas fa-lock"></i> Your privacy is protected</p>
+        </div>
+
+        <div class="footer-column">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Home</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Resources</a></li>
+            <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Emergency Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Stress Management</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Anxiety Relief</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Sleep Solutions</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Academic Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h3>Contact Us</h3>
+          <ul>
+            <li><i class="fas fa-envelope"></i> support@mindmate.edu</li>
+            <li><i class="fas fa-phone"></i> (+11) 456-7890</li>
+            <li><i class="fas fa-map-marker-alt"></i> Student Wellness Center, Newtown Campus</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="copyright">
+        <p>&copy; 2025 MindMate. All rights reserved. | Privacy Policy | Terms of Service</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+
+    // Minimal resources data
+    const resources = [
+      { id:1, title:"Guided Meditation", description:"10-minute session to reduce anxiety and find calm", type:"audio", category:"stress", rating:4.5, reviews:142 },
+      { id:2, title:"Exam Stress Toolkit", description:"Strategies to manage academic pressure effectively", type:"article", category:"stress", rating:4.0, reviews:89 },
+      { id:3, title:"Sleep Masterclass", description:"Improve your sleep quality with science-based techniques", type:"video", category:"sleep", rating:5.0, reviews:203 },
+      { id:4, title:"Anxiety Relief Techniques", description:"Practical exercises to reduce anxiety in daily life", type:"article", category:"anxiety", rating:4.2, reviews:97 },
+      { id:5, title:"Focus & Concentration Guide", description:"Methods to improve focus during study sessions", type:"article", category:"focus", rating:4.3, reviews:115 }
+    ];
+
+    // UI helpers
+    function generateStars(rating){
+      let stars = '';
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5;
+      for(let i=0;i<full;i++) stars += '<i class="fas fa-star"></i>';
+      if(half) stars += '<i class="fas fa-star-half-alt"></i>';
+      const empty = 5 - full - (half?1:0);
+      for(let i=0;i<empty;i++) stars += '<i class="far fa-star"></i>';
+      return stars;
+    }
+
+    function getActionText(type){
+      switch(type){
+        case 'audio': return 'Listen Now';
+        case 'video': return 'Watch Video';
+        default: return 'Read Guide';
+      }
+    }
+
+    function createResourceCard(resource){
+      const div = document.createElement('div');
+      div.className = 'resource-card';
+      let iconClass = 'fas fa-book';
+      if(resource.type === 'audio') iconClass = 'fas fa-headphones';
+      if(resource.type === 'video') iconClass = 'fas fa-video';
+
+      div.innerHTML = `
+        <div class="resource-icon"><i class="${iconClass}"></i></div>
+        <div class="resource-content">
+          <h3>${resource.title}</h3>
+          <p>${resource.description}</p>
+          <div class="rating">${generateStars(resource.rating)} (${resource.reviews} reviews)</div>
+          <a href="#" class="btn-resource">${getActionText(resource.type)}</a>
+        </div>
+      `;
+      return div;
+    }
+
+    function loadResources(list = resources){
+      const container = document.getElementById('resourceContainer');
+      container.innerHTML = '';
+      if(!list.length){
+        container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--dark);">No resources found.</p>';
+        return;
+      }
+      list.forEach(r => container.appendChild(createResourceCard(r)));
+    }
+
+    // Filters, search & events
+    function filterResources(category){
+      if(category === 'all') return loadResources();
+      const filtered = resources.filter(r => r.category === category);
+      loadResources(filtered);
+    }
+
+    function searchResources(term){
+      const q = term.trim().toLowerCase();
+      if(!q) return loadResources();
+      const filtered = resources.filter(r =>
+        r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)
+      );
+      loadResources(filtered);
+    }
+
+    // AUTH GUARD: run on load
+    async function authGuard() {
+      // 1) quick local check
+      const token = localStorage.getItem('studentToken');
+      if (!token) {
+        // no token => redirect to login
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // 2) verify token against backend to ensure it's valid
+      try {
+        const res = await fetch(`${API_BASE}/me`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          // token invalid or expired
+          localStorage.removeItem('studentToken');
+          localStorage.removeItem('studentId');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        const data = await res.json();
+        // server returns { studentId: 'STUD123' } if token is valid
+        if (data && data.studentId) {
+          // show student id in nav
+          document.getElementById('studentIdDisplay').textContent = data.studentId;
+          // make sure localStorage studentId is in sync
+          localStorage.setItem('studentId', data.studentId);
+        } else {
+          localStorage.removeItem('studentToken');
+          localStorage.removeItem('studentId');
+          window.location.href = 'index.html';
+          return;
+        }
+      } catch (err) {
+        // network error or fetch failed: fail-safe redirect
+        console.error('Auth check failed:', err);
+        localStorage.removeItem('studentToken');
+        localStorage.removeItem('studentId');
+        window.location.href = 'index.html';
+      }
+    }
+
+    // DOM ready wiring
+    document.addEventListener('DOMContentLoaded', () => {
+      // run guard first
+      authGuard().then(() => {
+        // after guard passes, wire up UI
+        loadResources();
+
+        // category tabs
+        document.querySelectorAll('.category-tab').forEach(tab => {
+          tab.addEventListener('click', function(){
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            filterResources(this.dataset.category);
+          });
+        });
+
+        // search
+        const searchInput = document.getElementById('resourceSearch');
+        searchInput.addEventListener('input', () => searchResources(searchInput.value));
+
+        // nav scroll for resources link
+        const resourcesLink = document.getElementById('resourcesLink');
+        resourcesLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('resourcesSection').scrollIntoView({behavior:'smooth'});
+        });
+
+        // logout: clear tokens and go to login
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('studentToken');
+          localStorage.removeItem('studentId');
+          window.location.href = 'index.html';
+        });
+
+      });
+    });
+  </script>
+</body>
+</html>

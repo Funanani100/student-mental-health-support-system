@@ -1,77 +1,436 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindMate - Student Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .alert-banner { display:none; background:#FFF3CD; color:#856404; padding:10px 16px; border-radius:8px; margin:12px auto; max-width:1200px; }
+    .mood-confirmation { display:none; background:#E6FFED; color:#0B6623; padding:10px 16px; border-radius:8px; margin:12px auto; max-width:1200px; }
+    .mood-option.selected { outline: 3px solid rgba(94,151,246,0.25); transform: translateY(-4px); }
+  </style>
 </head>
 <body>
+  <div class="mood-confirmation" id="moodConfirmation"><i class="fas fa-check-circle"></i> <span id="moodConfirmText">Mood recorded</span></div>
+  <div class="alert-banner" id="alertBanner"><i class="fas fa-exclamation-triangle"></i> <span id="alertText"></span></div>
+
+    <!-- Header -->
     <header>
-        <div class="header-content">
-            <img src="../shared/logo-small.png" alt="Logo" class="logo-small">
-            <h1>Student Dashboard</h1>
-            <div class="user-info">
-                <span>ID: <span id="student-id"></span></span>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-brain"></i>
+                    <span>MindMate</span>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                        <li><a href="dashboard.html">Mood Tracker</a></li>
+                        <li><a href="chat.html">Chat</a></li>
+                        <li><a href="appointments.html">Appointments</a></li>
+                        <li><a href="resources.html">Resources</a></li>
+                    </ul>
+                </nav>
+                <div class="user-actions">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="studentIdDisplay">STUD ID</span>
+                    </div>
+                    <button class="btn btn-primary" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
             </div>
         </div>
-        <nav>
-            <a href="#" class="active">Dashboard</a>
-            <a href="#">Mood Tracker</a>
-            <a href="#">Chat</a>
-            <a href="#">Appointments</a>
-            <a href="#">Resources</a>
-        </nav>
     </header>
-    
-    <main class="dashboard-grid">
-        <div class="card">
-            <h2><span>😊</span> Today's Mood</h2>
-            <div class="mood-display">
-                <div id="today-mood">-</div>
-                <button class="secondary-btn" onclick="location.href='mood_tracker.html'">
-                    Update Mood
-                </button>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Welcome to Your Safe Space</h1>
+            <p id="welcomeMessage">We're here to support your mental health journey</p>
+            
+            <div class="feature-grid">
+                <a href="dashboard.html" class="feature-card">
+                    <i class="fas fa-smile"></i>
+                    <h3>Mood Tracker</h3>
+                    <p>Track your emotions and visualize patterns</p>
+                </a>
+                <a href="chat.html" class="feature-card">
+                    <i class="fas fa-comments"></i>
+                    <h3>Counselor Chat</h3>
+                    <p>Chat with counselors confidentially</p>
+                </a>
+                <a href="appointments.html" class="feature-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>Appointments</h3>
+                    <p>Book sessions with counselors</p>
+                </a>
+                <a href="resources.html" class="feature-card">
+                    <i class="fas fa-book-open"></i>
+                    <h3>Resources</h3>
+                    <p>Mental health resources</p>
+                </a>
             </div>
         </div>
-        
-        <div class="card">
-            <h2><span>📊</span> Mood History</h2>
-            <canvas id="mood-chart"></canvas>
+    </section>
+
+
+  <!-- Dashboard section -->
+  <section class="dashboard">
+    <div class="container">
+      <div class="section-title"><h2>Your Mental Health Dashboard</h2><p>Track your emotions and access support resources</p></div>
+
+      <div class="dashboard-content">
+        <div class="mood-tracker">
+          <div class="mood-header">
+            <h3><i class="fas fa-calendar-alt"></i> Today's Mood</h3>
+            <span id="current-date">Loading...</span>
+          </div>
+
+          <div class="mood-options" id="moodOptionsContainer">
+            <div class="mood-option" data-mood="happy" data-value="5"><div class="emoji">😊</div><div class="label">Happy</div></div>
+            <div class="mood-option" data-mood="calm" data-value="4"><div class="emoji">😌</div><div class="label">Calm</div></div>
+            <div class="mood-option" data-mood="sad" data-value="2"><div class="emoji">😔</div><div class="label">Sad</div></div>
+            <div class="mood-option" data-mood="anxious" data-value="1"><div class="emoji">😰</div><div class="label">Anxious</div></div>
+            <div class="mood-option" data-mood="tired" data-value="3"><div class="emoji">😴</div><div class="label">Tired</div></div>
+            <div class="mood-option" data-mood="excited" data-value="5"><div class="emoji">🥳</div><div class="label">Excited</div></div>
+            <div class="mood-option" data-mood="angry" data-value="1"><div class="emoji">😡</div><div class="label">Angry</div></div>
+          </div>
+
+          <div style="margin-top:12px; max-width:420px;">
+            <small>Optional: Add a note is not available in this demo (DB stores only date + mood)</small>
+          </div>
+
+          <div class="mood-chart" style="margin-top:18px;">
+            <canvas id="moodChart"></canvas>
+          </div>
         </div>
-        
-        <div class="card">
-            <h2><span>⏰</span> Upcoming Appointments</h2>
-            <div id="appointments-list" class="appointments-list"></div>
-            <button class="primary-btn" onclick="location.href='appointments.html'">
-                Schedule Appointment
-            </button>
+
+        <div class="dashboard-sidebar">
+          <div class="stats-card">
+            <h3><i class="fas fa-chart-line"></i> Weekly Stats</h3>
+            <div class="stats-grid">
+              <div class="stat-item"><div class="value" id="entriesCount">0</div><div class="label">Entries</div></div>
+              <div class="stat-item"><div class="value" id="avgMood">0.0</div><div class="label">Avg. Mood</div></div>
+              <div class="stat-item"><div class="value" id="commonMood">-</div><div class="label">Most Common</div></div>
+              <div class="stat-item"><div class="value" id="progress">-</div><div class="label">Progress</div></div>
+            </div>
+          </div>
+
+          <div class="stats-card">
+            <h3><i class="fas fa-comments"></i> Recent Support</h3>
+            <div class="support-message" id="supportMessage"><p>No messages yet.</p></div>
+            <button class="btn btn-primary" id="startChatBtn">Start a Chat</button>
+          </div>
+
+          <div class="stats-card">
+            <h3><i class="fas fa-calendar"></i> Upcoming Appointments</h3>
+            <div id="appointmentsList"><p>No upcoming appointments</p></div>
+            <button class="btn btn-primary" id="bookAppointmentBtn">Book Appointment</button>
+          </div>
         </div>
-        
-        <div class="card">
-            <h2><span>💬</span> Recent Chat</h2>
-            <div id="recent-chat" class="recent-chat"></div>
-            <button class="primary-btn" onclick="location.href='chat.html'">
-                Start New Chat
-            </button>
+      </div>
+    </div>
+  </section>
+
+      <!-- Emergency Section -->
+    <section class="emergency" id="emergencySection">
+        <div class="container">
+            <div class="section-title">
+                <h2>Emergency Support</h2>
+                <p>Immediate help available 24/7</p>
+            </div>
+            
+            <div class="emergency-grid">
+                <div class="emergency-card">
+                    <div class="emergency-header">
+                        <div class="emergency-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>Campus Security</h3>
+                    </div>
+                    <div class="emergency-content">
+                        <p>24/7 campus security services for immediate assistance</p>
+                        <a href="tel:+11234567890" class="btn-call">
+                            <i class="fas fa-phone-alt"></i> Call (+11) 456-7890
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="emergency-card">
+                    <div class="emergency-header">
+                        <div class="emergency-icon">
+                            <i class="fas fa-life-ring"></i>
+                        </div>
+                        <h3>Crisis Helpline</h3>
+                    </div>
+                    <div class="emergency-content">
+                        <p>National Suicide Prevention Lifeline - available 24/7</p>
+                        <a href="tel:+27711942822" class="btn-call">
+                            <i class="fas fa-phone-alt"></i> Call 1-234-567 TALK
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="emergency-card">
+                    <div class="emergency-header">
+                        <div class="emergency-icon">
+                            <i class="fas fa-ambulance"></i>
+                        </div>
+                        <h3>Emergency Medical</h3>
+                    </div>
+                    <div class="emergency-content">
+                        <p>Immediate medical assistance and ambulance services</p>
+                        <a href="tel:10111" class="btn-call">
+                            <i class="fas fa-phone-alt"></i> Call 10111
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-    </main>
-    
-    <script src="js/student.js"></script>
+    </section>
+
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+        <div class="footer-content">
+            <div class="footer-column">
+            <h3>MindMate</h3>
+            <p>A safe space for students to prioritise mental health and emotional well-being.</p>
+            <p><i class="fas fa-lock"></i> Your privacy is protected</p>
+            </div>
+
+            <div class="footer-column">
+            <h3>Quick Links</h3>
+            <ul>
+                <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Home</a></li>
+                <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Resources</a></li>
+                <li><a href="#"><i class="fas fa-chevron-right"></i> Emergency support</a></li>
+            </ul>
+            </div>
+
+            <div class="footer-column">
+            <h3>Resources</h3>
+            <ul>
+                <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Stress Management</a></li>
+                <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Anxiety Relief</a></li>
+                <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Sleep Solutions</a></li>
+                <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Academic Support</a></li>
+            </ul>
+            </div>
+
+            <div class="footer-column">
+            <h3>Contact Us</h3>
+            <ul>
+                <li><i class="fas fa-envelope"></i> support@mindmate.edu</li>
+                <li><i class="fas fa-phone"></i> (+11) 456-7890</li>
+                <li><i class="fas fa-map-marker-alt"></i> Student Wellness Center, Newtown Campus</li>
+            </ul>
+            </div>
+        </div>
+
+        <div class="copyright">
+            <p>&copy; 2025 MindMate. All rights reserved. | Privacy Policy | Terms of Service</p>
+        </div>
+        </div>
+    </footer>
     <script>
-        // Display student ID
-        document.getElementById('student-id').textContent = localStorage.getItem('studentId');
-        
-        // Initialize dashboard
-        loadDashboardData();
-        
-        function logout() {
+        const API_BASE = 'http://localhost:3000/api';
+        const token = () => localStorage.getItem('studentToken');
+        let moodChart = null;
+        const moodMap = {
+        happy: { emoji:'😊', value:5 },
+        calm: { emoji:'😌', value:4 },
+        sad: { emoji:'😔', value:2 },
+        anxious: { emoji:'😰', value:1 },
+        tired: { emoji:'😴', value:3 },
+        excited: { emoji:'🥳', value:5 },
+        angry: { emoji:'😡', value:1 }
+        };
+
+        // init
+        document.addEventListener('DOMContentLoaded', async () => {
+        // auth guard + /me validation
+        const t = token();
+        if (!t) { window.location.href = 'index.html'; return; }
+        try {
+            const meRes = await fetch(`${API_BASE}/me`, { headers: { 'Authorization': `Bearer ${t}` }});
+            if (!meRes.ok) throw new Error('Unauthorized');
+            const me = await meRes.json();
+            localStorage.setItem('studentId', me.studentId);
+            document.getElementById('studentIdDisplay').textContent = me.studentId;
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${me.studentId}. We're here to support your mental health journey.`;
+        } catch (err) {
+            console.error('auth failed', err);
             localStorage.removeItem('studentToken');
             localStorage.removeItem('studentId');
             window.location.href = 'index.html';
+            return;
+        }
+
+        // date display
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+        // buttons
+        document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('studentToken'); localStorage.removeItem('studentId'); window.location.href='index.html'; });
+        document.getElementById('startChatBtn').addEventListener('click', ()=> window.location.href='chat.html');
+        document.getElementById('bookAppointmentBtn').addEventListener('click', ()=> window.location.href='appointments.html');
+
+        // init chart & load data
+        initMoodChart();
+        await loadMoodHistory();
+        await markTodayMood();
+
+        // attach click handlers
+        document.querySelectorAll('.mood-option').forEach(opt => opt.addEventListener('click', onMoodClick));
+        });
+
+        // chart
+        function initMoodChart() {
+        const ctx = document.getElementById('moodChart').getContext('2d');
+        moodChart = new Chart(ctx, {
+            type:'line',
+            data: { labels:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], datasets:[{ label:'Mood', data:[null,null,null,null,null,null,null], borderColor:'#5E97F6', backgroundColor:'rgba(94,151,246,0.12)', tension:0.35, fill:true }]},
+            options: { responsive:true, scales:{ y:{ min:1, max:5, ticks:{ callback:(v)=>['😔','😐','😌','😊','🥳'][v-1] } } }, plugins:{ legend:{ display:false } } }
+        });
+        }
+
+        // handle click -> POST to /api/mood (server will upsert)
+        async function onMoodClick(e) {
+        const el = e.currentTarget;
+        const moodValue = Number(el.dataset.value);
+        if (!moodValue) return;
+
+        // visual selection
+        document.querySelectorAll('.mood-option').forEach(o=>o.classList.remove('selected'));
+        el.classList.add('selected');
+
+        try {
+            const res = await fetch(`${API_BASE}/mood`, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token()}` },
+            body: JSON.stringify({ mood: moodValue })
+            });
+
+            if (!res.ok) {
+            const err = await res.json().catch(()=>({error:'Failed'}));
+            throw new Error(err.error || 'Failed to record mood');
+            }
+
+            const saved = await res.json();
+            showMoodConfirmation('Mood recorded');
+            if (saved.mood <= 2) showAlertBanner("We noticed you're feeling down. Would you like to chat with a counselor?");
+            else hideAlertBanner();
+
+            // reload history & update chart/stats
+            await loadMoodHistory();
+        } catch (err) {
+            console.error('record mood failed', err);
+            alert(err.message || 'Could not record mood');
+            if ((err.message||'').toLowerCase().includes('unauthor')) {
+            localStorage.clear(); window.location.href = 'index.html';
+            }
+        }
+        }
+
+        function showMoodConfirmation(msg) { const el = document.getElementById('moodConfirmation'); document.getElementById('moodConfirmText').textContent = msg; el.style.display='block'; setTimeout(()=>el.style.display='none', 3000); }
+        function showAlertBanner(msg) { const b=document.getElementById('alertBanner'); document.getElementById('alertText').textContent = msg; b.style.display='block'; }
+        function hideAlertBanner(){ document.getElementById('alertBanner').style.display='none'; }
+
+        // load mood history
+        async function loadMoodHistory() {
+        try {
+            const res = await fetch(`${API_BASE}/mood`, { headers: { 'Authorization': `Bearer ${token()}` }});
+            if (!res.ok) throw new Error('Failed to load mood history');
+            const rows = await res.json(); // rows: [{id, studentId, date:'YYYY-MM-DD', mood}]
+            // build map by date - keep latest if duplicates
+            const map = {};
+            for (const r of rows) {
+            const d = (r.date instanceof Date) ? r.date.toISOString().slice(0,10) : r.date;
+            if (!map[d]) map[d] = { date: d, mood: Number(r.mood) };
+            }
+            const history = Object.values(map).sort((a,b)=>a.date.localeCompare(b.date));
+            window.studentMoodHistory = history;
+            updateMoodStats();
+            updateMoodChart();
+        } catch (err) {
+            console.error('loadMoodHistory error', err);
+        }
+        }
+
+        // mark today's mood (call /api/mood/today)
+        async function markTodayMood() {
+        try {
+            const res = await fetch(`${API_BASE}/mood/today`, { headers:{ 'Authorization': `Bearer ${token()}` }});
+            if (res.status === 204) return; // none
+            if (!res.ok) return;
+            const r = await res.json(); // {id, studentId, date, mood}
+            // find option with same value and mark it
+            document.querySelectorAll('.mood-option').forEach(opt => {
+            if (Number(opt.dataset.value) === Number(r.mood)) opt.classList.add('selected');
+            else opt.classList.remove('selected');
+            });
+            if (r.mood <= 2) showAlertBanner("We noticed you're feeling down. Would you like to chat with a counselor?");
+        } catch (err) {
+            console.error('markTodayMood error', err);
+        }
+        }
+
+        // update stats UI
+        function updateMoodStats() {
+        const history = window.studentMoodHistory || [];
+        const count = history.length;
+        document.getElementById('entriesCount').textContent = count;
+        if (!count) { document.getElementById('avgMood').textContent='0.0'; document.getElementById('commonMood').textContent='-'; document.getElementById('progress').textContent='-'; return; }
+
+        const avg = history.reduce((s,e)=>s+e.mood,0)/count;
+        document.getElementById('avgMood').textContent = avg.toFixed(1);
+
+        // most common mood
+        const freq = {}; history.forEach(h => freq[h.mood] = (freq[h.mood]||0)+1);
+        let most=null,max=0; for (const k in freq) if (freq[k]>max){max=freq[k];most=k;}
+        const moodKey = Object.keys(moodMap).find(k => moodMap[k].value === Number(most));
+        document.getElementById('commonMood').textContent = moodKey ? moodMap[moodKey].emoji : '-';
+
+        // progress: compare last 7 days vs previous 7 days
+        const last14 = [];
+        for (let i=13;i>=0;i--) {
+            const d = new Date(); d.setDate(d.getDate()-i); const ds = d.toISOString().slice(0,10);
+            const e = history.find(h=>h.date===ds);
+            last14.push(e ? e.mood : null);
+        }
+        const prev7 = last14.slice(0,7).filter(v=>v!==null); const last7 = last14.slice(7).filter(v=>v!==null);
+        if (prev7.length && last7.length) {
+            const avgPrev = prev7.reduce((s,v)=>s+v,0)/prev7.length;
+            const avgLast = last7.reduce((s,v)=>s+v,0)/last7.length;
+            const diff = avgLast - avgPrev;
+            const pct = ((diff / (avgPrev||avgLast)) * 100).toFixed(1);
+            document.getElementById('progress').textContent = `${diff>=0?'+':''}${pct}%`;
+        } else {
+            document.getElementById('progress').textContent = '-';
+        }
+        }
+
+        // update chart (last 7 days)
+        function updateMoodChart() {
+        const history = window.studentMoodHistory || [];
+        const labels = []; const data = [];
+        for (let i=6;i>=0;i--) {
+            const d=new Date(); d.setDate(d.getDate()-i);
+            labels.push(d.toLocaleDateString(undefined,{weekday:'short'}));
+            const ds = d.toISOString().slice(0,10);
+            const e = history.find(h=>h.date===ds);
+            data.push(e ? e.mood : null);
+        }
+        moodChart.data.labels = labels;
+        moodChart.data.datasets[0].data = data;
+        moodChart.update();
         }
     </script>
 </body>
 </html>
+

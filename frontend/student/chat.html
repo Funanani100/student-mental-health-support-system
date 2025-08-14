@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>MindMate - Chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    /* Minimal chat styles for copy/paste */
+    :root{--bg:#f6f9ff;--card:#ffffff;--muted:#6c7a89;--accent:#5E97F6}
+    body{font-family:Inter,Segoe UI,Arial;background:var(--bg);margin:0;padding:0;color:#243449}
+    .logo{display:flex;gap:8px;align-items:center}
+    .chat-wrap{display:grid;grid-template-columns:1fr 320px;gap:18px}
+    .panel{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(35,47,70,0.06)}
+    .chat-box{height:520px;display:flex;flex-direction:column}
+    .messages{flex:1;overflow:auto;padding:10px;border-radius:8px;background:#fbfdff;border:1px solid #eef4ff}
+    .msg{margin:8px 0;display:flex;flex-direction:column;max-width:66%;padding:10px 14px;border-radius:10px}
+    .msg.me{align-self:flex-end;background:linear-gradient(90deg,#5E97F6,#76C7C0);color:#fff}
+    .msg.other{align-self:flex-start;background:#eef4ff;color:#243449}
+    .meta{font-size:11px;color:var(--muted);margin-bottom:6px}
+    .composer{display:flex;gap:8px;margin-top:12px}
+    textarea{flex:1;padding:12px;border-radius:10px;border:1px solid #e6eefb;min-height:64px;resize:none}
+    button{background:var(--accent);color:#030303;border:none;padding:12px 16px;border-radius:10px;cursor:pointer}
+    .right-panel .list{display:flex;flex-direction:column;gap:8px}
+    .counselor-btn{padding:10px;border-radius:8px;border:1px solid #e6eefb;background:#fff;cursor:pointer;text-align:left}
+    .counselor-btn.selected{outline:3px solid rgba(94,151,246,0.15);background:#838383}
+    .small{font-size:13px;color:var(--muted)}
+    .topbar{display:flex;gap:12px;align-items:center}
+    .btn-logout{background:#2b8aef;color:#fff;border-radius:8px;padding:8px 12px;border:none;cursor:pointer}
+    .checkbox{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+  <!-- Header / Nav -->
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div style="display:flex;align-items:center;gap:18px;width:100%;justify-content:space-between;">
+          <div class="logo">
+            <i class="fas fa-brain"></i>
+            <span>MindMate</span>
+          </div>
+
+          <nav>
+            <ul>
+              <li><a href="dashboard.html" class="active">Dashboard</a></li>
+              <li><a href="dashboard.html" id="moodLink">Mood Tracker</a></li>
+              <li><a href="chat.html" id="chatLink">Chat</a></li>
+              <li><a href="appointments.html" id="appointmentLink">Appointments</a></li>
+              <li><a href="resources.html" id="resourcesLink">Resources</a></li>
+            </ul>
+          </nav>
+
+          <div class="user-actions">
+            <div class="user-info">
+              <i class="fas fa-user-circle"></i>
+              <span id="studentIdDisplay">—</span>
+            </div>
+            <button class="btn btn-primary" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+    <div class="chat-wrap">
+      <!-- Left: chat -->
+      <div class="panel chat-panel chat-box">
+        <div style="margin-bottom:8px" class="small" id="sessionInfo">Connecting...</div>
+        <div class="messages" id="messages"></div>
+
+        <div class="composer">
+          <textarea id="messageInput" placeholder="Write your message..." maxlength="1000"></textarea>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button id="sendBtn"><i class="fas fa-paper-plane"></i> Send</button>
+            <button id="refreshBtn" style="background:#1f2d3d;color:#ffffff">Refresh</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: counselors + settings -->
+      <div class="panel right-panel">
+        <h3 style="margin-top:0">Chat Settings</h3>
+        <div class="small" id="nextSessionInfo">Next Session: checking...</div>
+
+        <hr>
+
+        <div style="margin-top:8px">
+          <div class="small">Select counselor (or emergency)</div>
+          <div class="list" id="counselorList" style="margin-top:8px"></div>
+        </div>
+
+        <div style="margin-top:12px" class="checkbox">
+          <input type="checkbox" id="emergencyCheck"><label for="emergencyCheck" class="small">Emergency — contact any available counselor</label>
+        </div>
+
+        <div style="margin-top:14px">
+          <button id="startChatBtn" style="padding:8px 10px">Start/Join</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Chat client script
+  const API_BASE = 'http://localhost:3000/api';
+  const POLL_MS = 2500;
+
+  let studentToken = localStorage.getItem('studentToken');
+  let studentId = localStorage.getItem('studentId');
+  let counselors = []; // {id, name}
+  let selectedCounselorId = null;
+  let emergencyMode = false;
+  let shownMessageIds = new Set();
+  let pollTimer = null;
+  let lastFetch = 0;
+
+  // DOM refs
+  const studentIdDisplay = document.getElementById('studentIdDisplay');
+  const messagesEl = document.getElementById('messages');
+  const sendBtn = document.getElementById('sendBtn');
+  const messageInput = document.getElementById('messageInput');
+  const counselorListEl = document.getElementById('counselorList');
+  const emergencyCheck = document.getElementById('emergencyCheck');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const sessionInfo = document.getElementById('sessionInfo');
+  const nextSessionInfo = document.getElementById('nextSessionInfo');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const startChatBtn = document.getElementById('startChatBtn');
+
+  // Startup
+  document.addEventListener('DOMContentLoaded', init);
+
+  function setStatus(msg) { sessionInfo.textContent = msg; }
+
+  async function init(){
+    // Basic auth guard
+    if (!studentToken || !studentId) {
+      window.location.href = 'index.html';
+      return;
+    }
+    studentIdDisplay.textContent = studentId;
+
+    // Bind events
+    sendBtn.addEventListener('click', onSend);
+    logoutBtn.addEventListener('click', onLogout);
+    emergencyCheck.addEventListener('change', (e) => {
+      emergencyMode = e.target.checked;
+      // If emergency mode, allow any counselor; visually deselect none
+      if (emergencyMode) {
+        selectedCounselorId = null;
+        updateCounselorUI();
+      }
+    });
+    refreshBtn.addEventListener('click', fetchMessagesOnce);
+    startChatBtn.addEventListener('click', () => {
+      // start poll / refresh right away
+      fetchMessagesOnce(true);
+    });
+
+    // Verify token quickly
+    try {
+      const me = await apiGet('/me');
+      if (!me || !me.studentId) throw new Error('Not authenticated');
+      // load counselors
+      await loadCounselors();
+      // load next session info
+      await fetchNextSessionInfo();
+      // fetch messages & start polling
+      await fetchMessagesOnce(true);
+      pollTimer = setInterval(fetchMessagesOnce, POLL_MS);
+      setStatus('Connected as ' + studentId);
+    } catch (err) {
+      console.error('init error', err);
+      // If unauthorized, clear storage
+      localStorage.removeItem('studentToken');
+      localStorage.removeItem('studentId');
+      window.location.href = 'index.html';
+    }
+  }
+
+  // Simple API helpers
+  function apiHeaders() {
+    return { 'Content-Type':'application/json', 'Authorization': `Bearer ${studentToken}` };
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(API_BASE + path, { headers: apiHeaders() });
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Unauthorized');
+    }
+    return await res.json();
+  }
+
+  async function apiPost(path, body) {
+    const res = await fetch(API_BASE + path, { method:'POST', headers: apiHeaders(), body: JSON.stringify(body) });
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Unauthorized');
+    }
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'API error');
+    return json;
+  }
+
+  // Load counselors list
+  async function loadCounselors(){
+    try {
+      const c = await apiGet('/counselors');
+      counselors = Array.isArray(c) ? c : [];
+      renderCounselors();
+    } catch (err) {
+      console.error('loadCounselors', err);
+      counselors = [];
+      renderCounselors();
+    }
+  }
+
+  function renderCounselors(){
+    counselorListEl.innerHTML = '';
+    counselors.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'counselor-btn' + (selectedCounselorId === c.id ? ' selected' : '');
+      btn.textContent = c.name || c.username || ('Counselor ' + c.id);
+      btn.addEventListener('click', () => {
+        emergencyCheck.checked = false;
+        emergencyMode = false;
+        selectedCounselorId = c.id;
+        updateCounselorUI();
+        fetchMessagesOnce(true); // immediate refresh for this counselor
+      });
+      counselorListEl.appendChild(btn);
+    });
+    updateCounselorUI();
+  }
+
+  function updateCounselorUI(){
+    Array.from(counselorListEl.children).forEach((el, idx) => {
+      const id = counselors[idx] && counselors[idx].id;
+      el.classList.toggle('selected', id === selectedCounselorId && !emergencyMode);
+    });
+    // Show nextSessionInfo depending on selection
+    if (selectedCounselorId) nextSessionInfo.textContent = 'Selected counselor: ' + (counselors.find(c=>c.id===selectedCounselorId)?.name || selectedCounselorId);
+    else nextSessionInfo.textContent = emergencyMode ? 'Emergency: messaging any available counselor' : 'No counselor selected';
+  }
+
+  // Fetch "next session info" (for UI hint)
+  async function fetchNextSessionInfo(){
+    try {
+      // re-use appointments endpoint
+      const appts = await apiGet('/appointments');
+      const now = new Date();
+      // find the nearest scheduled appointment >= now
+      const upcoming = appts.filter(a => a.status === 'scheduled' && new Date(a.datetime) >= now).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+      if (upcoming.length === 0) {
+        nextSessionInfo.textContent = 'No upcoming session';
+      } else {
+        const a = upcoming[0];
+        nextSessionInfo.textContent = 'Next session: ' + (a.counselorName || a.counselorUsername || 'Counselor') + ' at ' + new Date(a.datetime).toLocaleString();
+        // preselect counselor if within window
+        const apptTime = new Date(a.datetime);
+        const diffMs = apptTime - now;
+        if (diffMs <= 1000*60*60*24) {
+          // prefer preselect
+          selectedCounselorId = a.counselorId;
+          updateCounselorUI();
+        }
+      }
+    } catch (err) {
+      console.warn('fetchNextSessionInfo error', err);
+      nextSessionInfo.textContent = 'Could not fetch session info';
+    }
+  }
+
+  // Fetch messages once (with optional immediate flag to scroll)
+  async function fetchMessagesOnce(force=false){
+    // avoid overlapping fetches
+    const now = Date.now();
+    if (!force && (now - lastFetch) < (POLL_MS - 200)) return;
+    lastFetch = now;
+
+    try {
+      // Provide counselor filter if selected and not emergency
+      const q = selectedCounselorId && !emergencyMode ? `?counselorId=${selectedCounselorId}` : '';
+      const rows = await apiGet('/chats' + q);
+
+      // Render all retrieved messages for this student (dedupe by id)
+      let appended = 0;
+      rows.forEach(r => {
+        if (shownMessageIds.has(r.id)) return;
+        appendMessageToUI(r);
+        shownMessageIds.add(r.id);
+        appended++;
+      });
+
+      if (appended > 0) scrollMessagesToBottom();
+    } catch (err) {
+      console.error('fetchMessagesOnce', err);
+      if (err.message === 'Unauthorized') {
+        localStorage.removeItem('studentToken');
+        localStorage.removeItem('studentId');
+        window.location.href = 'index.html';
+      }
+    }
+  }
+
+  function appendMessageToUI(r){
+    const div = document.createElement('div');
+    const isMe = (r.studentid || r.studentId) === studentId;
+    div.className = 'msg ' + (isMe ? 'me' : 'other');
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+    meta.textContent = (isMe ? 'You' : (r.counselorName || r.counselorUsername || 'Counselor')) + ' • ' + ts;
+    const body = document.createElement('div');
+    body.textContent = r.message;
+    div.appendChild(meta);
+    div.appendChild(body);
+    messagesEl.appendChild(div);
+  }
+
+  function scrollMessagesToBottom(){
+    messagesEl.scrollTop = messagesEl.scrollHeight + 200;
+  }
+
+  // Send message handler
+  let sending = false;
+  async function onSend(){
+    if (sending) return;
+    const text = (messageInput.value || '').trim();
+    if (!text) return alert('Please write a message');
+    if (!selectedCounselorId && !emergencyMode) return alert('Select a counselor or enable Emergency');
+
+    sending = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+
+    try {
+      const payload = { message: text, counselorId: selectedCounselorId, emergency: !!emergencyMode };
+      const res = await apiPost('/chats', payload);
+
+      // server returns inserted message with id & timestamp
+      // ensure not duplicating UI if poll will fetch same row: add id now
+      if (res && res.id) {
+        shownMessageIds.add(res.id);
+        appendMessageToUI(res);
+        scrollMessagesToBottom();
+      }
+
+      messageInput.value = '';
+    } catch (err) {
+      console.error('send failed', err);
+      alert(err.message || 'Send failed');
+      if (err.message === 'Unauthorized') {
+        localStorage.removeItem('studentToken');
+        localStorage.removeItem('studentId');
+        window.location.href = 'index.html';
+      }
+    } finally {
+      sending = false;
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+    }
+  }
+
+  function onLogout(){
+    localStorage.removeItem('studentToken');
+    localStorage.removeItem('studentId');
+    window.location.href = 'index.html';
+  }
+
+  // cleanup on unload
+  window.addEventListener('beforeunload', () => {
+    if (pollTimer) clearInterval(pollTimer);
+  });
+</script>
+</body>
+</html>

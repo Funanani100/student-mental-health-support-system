@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindMate - Appointments</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/appointments.css">
+
+  <script>
+    // Top-level quick guard: simple check for token presence, immediate redirect if missing.
+    document.addEventListener('DOMContentLoaded', () => {
+      const t = localStorage.getItem('studentToken');
+      if (!t) {
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="mood-confirmation" id="moodConfirmation" style="display:none;">
+    <i class="fas fa-check-circle"></i> <span id="confirmText">Done</span>
+  </div>
+
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo"><i class="fas fa-brain"></i><span>MindMate</span></div>
+        <nav>
+          <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="dashboard.html">Mood Tracker</a></li>
+            <li><a href="chat.html">Chat</a></li>
+            <li><a href="appointments.html" class="active">Appointments</a></li>
+            <li><a href="resources.html">Resources</a></li>
+          </ul>
+        </nav>
+        <div class="user-actions">
+          <div class="user-info"><i class="fas fa-user-circle"></i><span id="studentIdDisplay">STUD_ID</span></div>
+          <button class="btn btn-primary" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Manage Your Appointments</h1>
+      <p id="welcomeMessage">Schedule and track your counseling sessions</p>
+    </div>
+  </section>
+
+  <section class="appointments">
+    <div class="container">
+      <div class="section-title">
+        <h2>Your Counseling Sessions</h2>
+        <p>Schedule, view, and manage your appointments</p>
+      </div>
+
+      <div id="messages"></div>
+
+      <div class="appointments-container" style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:320px;">
+          <div class="appointments-list">
+            <h3><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h3>
+            <div id="appointmentsList"><p>Loading...</p></div>
+
+            <h3 style="margin-top:18px;"><i class="fas fa-history"></i> Past Appointments</h3>
+            <div id="pastAppointments"><p>No past appointments</p></div>
+          </div>
+        </div>
+
+        <div class="appointment-form" style="width:380px;">
+          <h3><i class="fas fa-plus-circle"></i> Book New Appointment</h3>
+          <p class="note">Pick a counselor and a time. The app prevents double-booking.</p>
+
+          <div class="form-group">
+            <label for="counselorSelect">Counselor</label>
+            <select id="counselorSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;">
+              <option>Loading counselors...</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label for="appointmentDate">Date & Time</label>
+            <input type="datetime-local" id="appointmentDate" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;">
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label for="appointmentReason">Reason for Appointment</label>
+            <select id="appointmentReason" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;">
+              <option value="general">General Consultation</option>
+              <option value="anxiety">Anxiety/Stress</option>
+              <option value="academic">Academic Pressure</option>
+              <option value="relationships">Relationship Issues</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label for="appointmentNotes">Additional Notes</label>
+            <textarea id="appointmentNotes" rows="4" placeholder="Any specific concerns..." style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:1rem;"></textarea>
+          </div>
+
+          <div class="form-actions" style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn-cancel" id="clearForm"><i class="fas fa-times"></i> Clear</button>
+            <button class="btn-submit" id="submitAppointment" style="background:linear-gradient(90deg,#5E97F6,#76C7C0);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;">
+              <i class="fas fa-calendar-check"></i> Book Appointment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <h3>MindMate</h3>
+          <p>A safe space for students to prioritize mental health and emotional well-being.</p>
+          <p><i class="fas fa-lock"></i> Your privacy is protected</p>
+        </div>
+
+        <div class="footer-column">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Home</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Resources</li>
+            <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Emergency Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Stress Management</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Anxiety Relief</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Sleep Solutions</a></li>
+            <li><a href="resources.html"><i class="fas fa-chevron-right"></i> Academic Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-column">
+          <h3>Contact Us</h3>
+          <ul>
+            <li><i class="fas fa-envelope"></i> support@mindmate.edu</li>
+            <li><i class="fas fa-phone"></i> (+11) 456-7890</i>
+            <li><i class="fas fa-map-marker-alt"></i> Student Wellness Center, Newtown Campus</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="copyright">
+        <p>&copy; 2025 MindMate. All rights reserved. | Privacy Policy | Terms of Service</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function(){
+      const API_BASE = 'http://localhost:3000/api';
+      const messagesEl = document.getElementById('messages');
+      const appointmentsListEl = document.getElementById('appointmentsList');
+      const pastAppointmentsEl = document.getElementById('pastAppointments');
+      const counselorSelect = document.getElementById('counselorSelect');
+      const token = () => localStorage.getItem('studentToken');
+
+      // helper UI functions
+      function showMessage(type, text, timeout = 5000) {
+        messagesEl.innerHTML = `<div class="${type === 'error' ? 'error-box' : 'success-box'}">${text}</div>`;
+        if (timeout) setTimeout(()=>{ if (messagesEl) messagesEl.innerHTML = ''; }, timeout);
+      }
+
+      function showConfirmation(msg) {
+        const conf = document.getElementById('moodConfirmation');
+        document.getElementById('confirmText').textContent = msg;
+        conf.style.display = 'block';
+        setTimeout(()=> conf.style.display = 'none', 3000);
+      }
+
+      // DATE formatting
+      function formatDateTime(iso) {
+        if (!iso) return { dateStr: '-', timeStr: '-' };
+        const d = new Date(iso);
+        const dateStr = d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+        const timeStr = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+        return { dateStr, timeStr };
+      }
+
+      // Build appointment DOM item
+      function buildAppointmentElement(appt) {
+        const { dateStr, timeStr } = formatDateTime(appt.datetime);
+        const apptDiv = document.createElement('div');
+        apptDiv.className = 'appointment-item';
+        apptDiv.dataset.id = appt.id;
+
+        const left = document.createElement('div');
+        left.className = 'appointment-left';
+        left.innerHTML = `
+          <div class="appointment-time">${dateStr} at ${timeStr}</div>
+          <div class="appointment-counselor">With ${appt.counselorName || appt.counselorname || 'Counselor'}</div>
+        `;
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.flexDirection = 'column';
+        right.style.alignItems = 'flex-end';
+        right.innerHTML = `
+          <div class="appointment-status status-${appt.status}">${appt.status}</div>
+          <div style="margin-top:10px;">
+            <button class="btn-cancel" data-id="${appt.id}"><i class="fas fa-times"></i> Cancel</button>
+          </div>
+        `;
+
+        apptDiv.appendChild(left);
+        apptDiv.appendChild(right);
+
+        // cancel action
+        apptDiv.querySelector('.btn-cancel').addEventListener('click', async (e) => {
+          const id = e.currentTarget.dataset.id;
+          if (!confirm('Are you sure you want to cancel this appointment?')) return;
+          try {
+            const res = await fetch(`${API_BASE}/appointments/${id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token()}` }
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(()=>({error:'Cancel failed'}));
+              throw new Error(err.error || 'Failed to cancel');
+            }
+            // remove from DOM
+            apptDiv.remove();
+            showConfirmation('Appointment cancelled');
+          } catch (err) {
+            console.error('cancel error', err);
+            showMessage('error', err.message || 'Cancellation failed');
+            if ((err.message||'').toLowerCase().includes('unauthor')) {
+              localStorage.clear();
+              window.location.href = 'index.html';
+            }
+          }
+        });
+
+        return apptDiv;
+      }
+
+      // LOAD counselors, populate select
+      async function loadCounselors() {
+        try {
+          const res = await fetch(`${API_BASE}/counselors`, {
+            headers: { 'Authorization': `Bearer ${token()}` }
+          });
+          if (!res.ok) {
+            throw new Error('Failed to load counselors');
+          }
+          const list = await res.json();
+          counselorSelect.innerHTML = '';
+          list.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.name || c.username || `Counselor ${c.id}`;
+            counselorSelect.appendChild(opt);
+          });
+        } catch (err) {
+          console.error('loadCounselors', err);
+          // fallback - static options (already in UI)
+          counselorSelect.innerHTML = `
+            <option value="4">Dr. Sarah Johnson</option>
+            <option value="5">Dr. Michael Chen</option>
+            <option value="6">Dr. Emily Rodriguez</option>
+          `;
+        }
+      }
+
+      // LOAD appointments
+      async function loadAppointments() {
+        try {
+          appointmentsListEl.innerHTML = '<p>Loading...</p>';
+          pastAppointmentsEl.innerHTML = '<p>Loading...</p>';
+          const res = await fetch(`${API_BASE}/appointments`, {
+            headers: { 'Authorization': `Bearer ${token()}` }
+          });
+          if (!res.ok) {
+            throw new Error('Failed to load appointments');
+          }
+          const appointments = await res.json();
+          // split upcoming/past
+          const now = new Date();
+          const upcoming = [], past = [];
+          appointments.forEach(a => {
+            const dt = a.datetime ? new Date(a.datetime) : null;
+            if (dt && dt >= now && a.status === 'scheduled') upcoming.push(a);
+            else past.push(a);
+          });
+
+          appointmentsListEl.innerHTML = '';
+          pastAppointmentsEl.innerHTML = '';
+
+          if (upcoming.length === 0) appointmentsListEl.innerHTML = '<p>No upcoming appointments</p>';
+          else upcoming.forEach(a => appointmentsListEl.appendChild(buildAppointmentElement(a)));
+
+          if (past.length === 0) pastAppointmentsEl.innerHTML = '<p>No past appointments</p>';
+          else past.forEach(a => pastAppointmentsEl.appendChild(buildAppointmentElement(a)));
+
+        } catch (err) {
+          console.error('loadAppointments error', err);
+          appointmentsListEl.innerHTML = '<p>Error loading appointments. Please try again later.</p>';
+          pastAppointmentsEl.innerHTML = '<p>Error loading appointments. Please try again later.</p>';
+          if ((err.message||'').toLowerCase().includes('unauthor')) {
+            localStorage.clear();
+            window.location.href = 'index.html';
+          }
+        }
+      }
+
+      // BOOK appointment
+      async function bookAppointment() {
+        try {
+          const counselorId = counselorSelect.value;
+          const datetime = document.getElementById('appointmentDate').value;
+          const notes = document.getElementById('appointmentNotes').value;
+
+          if (!datetime) {
+            showMessage('error', 'Please select a date and time');
+            return;
+          }
+
+          const iso = new Date(datetime).toISOString();
+
+          const res = await fetch(`${API_BASE}/appointments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token()}` },
+            body: JSON.stringify({ counselorId, datetime: iso, notes })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(()=>({ error: 'Booking failed' }));
+            if (res.status === 409) { // conflict
+              showMessage('error', err.error || 'Conflict: ' + (err.error || 'Cannot book'));
+              return;
+            }
+            throw new Error(err.error || 'Failed to book appointment');
+          }
+
+          const appointment = await res.json();
+          // ensure counselorName exists (some backends might return counselorname)
+          const cName = appointment.counselorName || appointment.counselorname || null;
+
+          // insert to top of upcoming
+          const node = buildAppointmentElement(Object.assign({}, appointment, { counselorName: cName }));
+          // if first element is "No upcoming appointments" replace
+          if (appointmentsListEl.textContent.trim().startsWith('No upcoming')) appointmentsListEl.innerHTML = '';
+          appointmentsListEl.insertBefore(node, appointmentsListEl.firstChild);
+
+          showConfirmation('Appointment booked successfully!');
+          clearForm();
+
+        } catch (err) {
+          console.error('book error', err);
+          showMessage('error', err.message || 'Booking failed');
+          if ((err.message||'').toLowerCase().includes('unauthor')) {
+            localStorage.clear();
+            window.location.href = 'index.html';
+          }
+        }
+      }
+
+      function clearForm() {
+        document.getElementById('appointmentDate').value = '';
+        document.getElementById('appointmentNotes').value = '';
+      }
+
+      // AUTH guard: call /api/me to validate token and retrieve studentId
+      async function authGuard() {
+        const t = token();
+        if (!t) {
+          window.location.href = 'index.html';
+          return false;
+        }
+        try {
+          const res = await fetch(`${API_BASE}/me`, { headers: { 'Authorization': `Bearer ${t}` } });
+          if (!res.ok) {
+            localStorage.clear();
+            window.location.href = 'index.html';
+            return false;
+          }
+          const data = await res.json();
+          if (!data || !data.studentId) {
+            localStorage.clear();
+            window.location.href = 'index.html';
+            return false;
+          }
+          document.getElementById('studentIdDisplay').textContent = data.studentId;
+          document.getElementById('welcomeMessage').textContent = `Welcome back, ${data.studentId}. Schedule your counseling sessions.`;
+          // ensure local value in sync
+          localStorage.setItem('studentId', data.studentId);
+          return true;
+        } catch (err) {
+          console.error('authGuard failed', err);
+          localStorage.clear();
+          window.location.href = 'index.html';
+          return false;
+        }
+      }
+
+      // wire listeners
+      document.addEventListener('DOMContentLoaded', async () => {
+        document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href='index.html'; });
+        document.getElementById('submitAppointment').addEventListener('click', bookAppointment);
+        document.getElementById('clearForm').addEventListener('click', clearForm);
+
+        const ok = await authGuard();
+        if (!ok) return;
+
+        // load counselors & appointments
+        await loadCounselors();
+        await loadAppointments();
+      });
+
+    })();
+  </script>
+</body>
+</html>

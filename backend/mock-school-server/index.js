@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = 'school_secret';
-const VALID_CODES = ['STUD123', 'STUD456', 'STUD789'];
+const VALID_CODES = ['STUD123', 'STUD456', 'STUD789', 'STUD123B'];
 
 app.post('/api/verify-code', (req, res) => {
   const { code } = req.body;
