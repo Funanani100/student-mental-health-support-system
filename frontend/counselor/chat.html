@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindMate - Counselor Chat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .chat-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      height: 70vh;
+      margin: 20px 0;
+    }
+
+    /* ====== ADDED PATCH ======
+       Prevent the grid from expanding as messages grow so the messages area scrolls.
+       Place this directly after .chat-container */
+    .students-panel,
+    .chat-panel {
+      height: 100%;
+      min-height: 0;      /* <-- critical: allow children to overflow/scroll inside grid */
+      overflow: hidden;   /* prevent the panel itself from growing */
+    }
+
+    .messages-container {
+      flex: 1 1 auto;              /* allow it to grow/shrink inside the flex column */
+      min-height: 0;               /* <-- critical for proper overflow in flex/grid layouts */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch; /* smooth scrolling on mobile */
+    }
+    /* ====== END PATCH ====== */
+
+    .students-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .chat-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .student-item {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .student-item:hover {
+      background: #f8f9fa;
+    }
+    .student-item.active {
+      background: #E3F2FD;
+      border-left: 4px solid #5E97F6;
+    }
+    .student-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #5E97F6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .student-info {
+      flex: 1;
+    }
+    .student-name {
+      font-weight: 600;
+      color: #243449;
+    }
+    .student-preview {
+      color: #666;
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+    .chat-time {
+      color: #999;
+      font-size: 0.7rem;
+    }
+    .emergency-badge {
+      background: #D63031;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      margin-left: 5px;
+    }
+    .unread-badge {
+      background: #5E97F6;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 15px;
+      max-width: 70%;
+    }
+    .message.student {
+      background: #E3F2FD;
+      margin-right: auto;
+    }
+    .message.counselor {
+      background: #5E97F6;
+      color: white;
+      margin-left: auto;
+    }
+    .message-time {
+      font-size: 0.7rem;
+      color: #999;
+      margin-top: 5px;
+    }
+    .message-input-container {
+      display: flex;
+      gap: 10px;
+    }
+    .message-input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      resize: none;
+    }
+    .send-btn {
+      background: #5E97F6;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chat-header {
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-brain"></i>
+          <span>MindMate</span>
+        </div>
+        <nav>
+          <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="chat.html" class="active">Chat</a></li>
+            <li><a href="appointments.html">Appointments</a></li>
+            <li><a href="students.html">Students</a></li>
+          </ul>
+        </nav>
+        <div class="user-actions">
+          <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span id="counselorNameDisplay">Counselor</span>
+          </div>
+          <button class="btn btn-primary" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Student Chats</h1>
+      <p>Communicate with students and provide support</p>
+    </div>
+  </section>
+
+  <section class="dashboard">
+    <div class="container">
+      <div class="chat-container">
+        <!-- Students List -->
+        <div class="students-panel">
+          <h3><i class="fas fa-users"></i> Students</h3>
+          <div id="studentsList">
+            <p>Loading students...</p>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-panel">
+          <div class="chat-header" id="chatHeader">
+            <h3>Select a student to start chatting</h3>
+          </div>
+          
+          <div class="messages-container" id="messagesContainer">
+            <p style="text-align: center; color: #999; margin-top: 50px;">
+              Select a student from the list to view messages
+            </p>
+          </div>
+
+          <div class="message-input-container" id="messageInputContainer" style="display: none;">
+            <textarea 
+              class="message-input" 
+              id="messageInput" 
+              placeholder="Type your message..." 
+              rows="1"
+            ></textarea>
+            <button class="send-btn" id="sendBtn">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <h3>MindMate</h3>
+          <p>Supporting student mental health and well-being.</p>
+          <p><i class="fas fa-lock"></i> Confidential & Secure</p>
+        </div>
+        <div class="footer-column">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Dashboard</a></li>
+            <li><a href="chat.html"><i class="fas fa-chevron-right"></i> Chat</a></li>
+            <li><a href="appointments.html"><i class="fas fa-chevron-right"></i> Appointments</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="#"><i class="fas fa-chevron-right"></i> Counseling Guidelines</a></li>
+            <li><a href="#"><i class="fas fa-chevron-right"></i> Emergency Protocols</a></li>
+            <li><a href="#"><i class="fas fa-chevron-right"></i> Student Resources</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Contact Support</h3>
+          <ul>
+            <li><i class="fas fa-envelope"></i> counselors@mindmate.edu</li>
+            <li><i class="fas fa-phone"></i> (+11) 456-7890</li>
+            <li><i class="fas fa-map-marker-alt"></i> Wellness Center, Newtown Campus</li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2025 MindMate. All rights reserved. | Privacy Policy | Terms of Service</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const token = () => localStorage.getItem('counselorToken');
+    let currentStudentId = null;
+    let pollInterval = null;
+    let shownMessageIds = new Set();
+
+    // Authentication guard
+    async function authGuard() {
+      const t = token();
+      if (!t) {
+        window.location.href = 'index.html';
+        return false;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/counselor/me`, {
+          headers: { 'Authorization': `Bearer ${t}` }
+        });
+        if (!res.ok) throw new Error('Unauthorized');
+        const data = await res.json();
+        document.getElementById('counselorNameDisplay').textContent = data.username;
+        return true;
+      } catch (err) {
+        console.error('Auth failed:', err);
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return false;
+      }
+    }
+
+    // Load students with recent chats
+    async function loadStudents() {
+      try {
+        const res = await fetch(`${API_BASE}/counselor/chats/students`, {
+          headers: { 'Authorization': `Bearer ${token()}` }
+        });
+        if (!res.ok) throw new Error('Failed to load students');
+        const students = await res.json();
+        renderStudentsList(students);
+      } catch (err) {
+        console.error('Load students error:', err);
+        document.getElementById('studentsList').innerHTML = '<p>Error loading students</p>';
+      }
+    }
+
+    function renderStudentsList(students) {
+      const container = document.getElementById('studentsList');
+      if (students.length === 0) {
+        container.innerHTML = '<p>No students with active chats</p>';
+        return;
+      }
+
+      container.innerHTML = students.map(student => `
+        <div class="student-item ${currentStudentId === student.studentId ? 'active' : ''}" 
+             onclick="selectStudent('${student.studentId}', '${student.studentName || student.studentId}')">
+          <div class="student-avatar">
+            ${(student.studentName || student.studentId).charAt(0).toUpperCase()}
+          </div>
+          <div class="student-info">
+            <div class="student-name">
+              ${student.studentName || student.studentId}
+              ${student.emergency ? '<span class="emergency-badge">EMERGENCY</span>' : ''}
+            </div>
+            <div class="student-preview">${student.lastMessage || 'No messages'}</div>
+          </div>
+          <div>
+            ${student.unreadCount > 0 ? `<div class="unread-badge">${student.unreadCount}</div>` : ''}
+            <div class="chat-time">${formatTime(student.lastTimestamp)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+ function selectStudent(studentId, studentName) {
+  currentStudentId = studentId;
+  
+  // Update UI to show active student
+  document.querySelectorAll('.student-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.studentId === studentId);
+  });
+
+  // Update chat header
+  document.getElementById('chatHeader').innerHTML = `
+    <h3>Chat with ${studentName}</h3>
+    <p style="margin: 0; color: #666;">Student ID: ${studentId}</p>
+  `;
+  
+  // Show message input - THIS IS THE KEY LINE
+  document.getElementById('messageInputContainer').style.display = 'flex';
+  
+  // Load messages
+  loadMessages(studentId);
+
+      
+      // Start polling for new messages
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(() => loadMessages(studentId), 2000);
+    }
+
+    async function loadMessages(studentId) {
+      try {
+        const res = await fetch(`${API_BASE}/counselor/chats?studentId=${studentId}`, {
+          headers: { 'Authorization': `Bearer ${token()}` }
+        });
+        if (!res.ok) throw new Error('Failed to load messages');
+        const messages = await res.json();
+        renderMessages(messages);
+        
+        // Mark as read
+        await markAsRead(studentId);
+      } catch (err) {
+        console.error('Load messages error:', err);
+      }
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('messagesContainer');
+      let newMessages = false;
+
+      const messagesHTML = messages.map(message => {
+        if (!shownMessageIds.has(message.id)) {
+          newMessages = true;
+          shownMessageIds.add(message.id);
+        }
+
+        const isCounselor = message.counselorId; // Message has counselorId if sent by counselor
+        return `
+          <div class="message ${isCounselor ? 'counselor' : 'student'}">
+            <div>${message.message}</div>
+            <div class="message-time">${formatDateTime(message.timestamp)}</div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = messagesHTML;
+      
+      // Scroll to bottom if new messages
+      if (newMessages) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    async function markAsRead(studentId) {
+      try {
+        await fetch(`${API_BASE}/counselor/chats/read`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token()}`
+          },
+          body: JSON.stringify({ studentId })
+        });
+      } catch (err) {
+        console.error('Mark as read error:', err);
+      }
+    }
+
+    async function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      
+      if (!message || !currentStudentId) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/counselor/chats`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token()}`
+          },
+          body: JSON.stringify({
+            studentId: currentStudentId,
+            message: message
+          })
+        });
+
+        if (res.ok) {
+          messageInput.value = '';
+          loadMessages(currentStudentId); // Reload to show the new message
+        } else {
+          alert('Failed to send message');
+        }
+      } catch (err) {
+        console.error('Send message error:', err);
+        alert('Error sending message');
+      }
+    }
+
+    function formatDateTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    function formatTime(isoString) {
+      if (!isoString) return '';
+      return new Date(isoString).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      const authenticated = await authGuard();
+      if (!authenticated) return;
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = 'index.html';
+      });
+
+      document.getElementById('sendBtn').addEventListener('click', sendMessage);
+      
+      document.getElementById('messageInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      await loadStudents();
+
+      // Check URL for studentId parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const studentId = urlParams.get('studentId');
+      if (studentId) {
+        // Need to get student name first - in a real app, you'd have this data
+        selectStudent(studentId, studentId);
+      }
+    });
+
+    // Cleanup
+    window.addEventListener('beforeunload', () => {
+      if (pollInterval) clearInterval(pollInterval);
+    });
+  </script>
+</body>
+</html>

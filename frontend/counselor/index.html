@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindMate - Counselor Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .login-container {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #243449;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(90deg, #5E97F6, #76C7C0);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="login-container">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <div class="logo" style="justify-content: center; margin-bottom: 10px;">
+          <i class="fas fa-brain"></i>
+          <span>MindMate</span>
+        </div>
+        <h2>Counselor Login</h2>
+        <p>Access your counseling dashboard</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required>
+        </div>
+
+        <button type="submit" class="btn-login">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+      </form>
+
+      <div id="loginMessage" style="margin-top: 15px; text-align: center;"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const messageEl = document.getElementById('loginMessage');
+
+      try {
+        const response = await fetch(`${API_BASE}/counselor/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('counselorToken', data.token);
+          localStorage.setItem('counselorId', data.counselorId);
+          localStorage.setItem('counselorName', data.name);
+          messageEl.innerHTML = '<div style="color: green;">Login successful! Redirecting...</div>';
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1000);
+        } else {
+          messageEl.innerHTML = `<div style="color: red;">${data.error || 'Login failed'}</div>`;
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        messageEl.innerHTML = '<div style="color: red;">Network error. Please try again.</div>';
+      }
+    });
+
+    // Auto-fill demo credentials for testing
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('username').value = 'counselor1';
+      document.getElementById('password').value = 'password123';
+    });
+  </script>
+</body>
+</html>

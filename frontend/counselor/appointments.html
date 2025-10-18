@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MindMate - Counselor Appointments</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/common.css">
+  <style>
+    .appointments-container {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 30px;
+      margin: 20px 0;
+    }
+    .appointments-list {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .appointment-item {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .appointment-item:last-child {
+      border-bottom: none;
+    }
+    .appointment-info h4 {
+      margin: 0 0 5px 0;
+      color: #243449;
+    }
+    .appointment-time {
+      color: #5E97F6;
+      font-weight: 600;
+    }
+    .appointment-student {
+      color: #666;
+    }
+    .appointment-reason {
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-top: 5px;
+      display: inline-block;
+    }
+    .appointment-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .status-scheduled {
+      background: #E3F2FD;
+      color: #1976D2;
+    }
+    .status-completed {
+      background: #E8F5E8;
+      color: #2E7D32;
+    }
+    .status-cancelled {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .calendar-widget {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      text-align: center;
+    }
+    .calendar-day {
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .calendar-day.has-appointments {
+      background: #E3F2FD;
+      color: #1976D2;
+    }
+    .calendar-day.today {
+      background: #5E97F6;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-brain"></i>
+          <span>MindMate</span>
+        </div>
+        <nav>
+          <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="chat.html">Chat</a></li>
+            <li><a href="appointments.html" class="active">Appointments</a></li>
+            <li><a href="students.html">Students</a></li>
+          </ul>
+        </nav>
+        <div class="user-actions">
+          <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span id="counselorNameDisplay">Counselor</span>
+          </div>
+          <button class="btn btn-primary" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Appointment Schedule</h1>
+      <p>Manage your counseling sessions and availability</p>
+    </div>
+  </section>
+
+  <section class="dashboard">
+    <div class="container">
+      <div class="appointments-container">
+        <!-- Appointments List -->
+        <div class="appointments-list">
+          <h3><i class="fas fa-calendar-alt"></i> Your Appointments</h3>
+          <div style="margin: 15px 0;">
+            <button class="btn btn-primary" id="todayBtn">Today</button>
+            <button class="btn" id="upcomingBtn">Upcoming</button>
+            <button class="btn" id="pastBtn">Past</button>
+          </div>
+          <div id="appointmentsList">
+            <p>Loading appointments...</p>
+          </div>
+        </div>
+
+        <!-- Calendar & Stats -->
+        <div>
+          <div class="calendar-widget">
+            <div class="calendar-header">
+              <h4 style="margin: 0;">April 2025</h4>
+              <div>
+                <button class="btn"><i class="fas fa-chevron-left"></i></button>
+                <button class="btn"><i class="fas fa-chevron-right"></i></button>
+              </div>
+            </div>
+            <div class="calendar-grid">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+              <!-- Calendar days would be populated dynamically -->
+              <div class="calendar-day">1</div>
+              <div class="calendar-day">2</div>
+              <div class="calendar-day has-appointments">3</div>
+              <div class="calendar-day today">4</div>
+              <!-- ... more days -->
+            </div>
+          </div>
+
+          <div class="calendar-widget" style="margin-top: 20px;">
+            <h4><i class="fas fa-chart-bar"></i> Appointment Stats</h4>
+            <div style="margin-top: 15px;">
+              <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                <span>Scheduled:</span>
+                <strong id="scheduledCount">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                <span>Completed (Week):</span>
+                <strong id="completedCount">0</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                <span>Cancelled (Week):</span>
+                <strong id="cancelledCount">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-column">
+          <h3>MindMate</h3>
+          <p>Supporting student mental health and well-being.</p>
+          <p><i class="fas fa-lock"></i> Confidential & Secure</p>
+        </div>
+        <div class="footer-column">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="dashboard.html"><i class="fas fa-chevron-right"></i> Dashboard</a></li>
+            <li><a href="chat.html"><i class="fas fa-chevron-right"></i> Chat</a></li>
+            <li><a href="appointments.html"><i class="fas fa-chevron-right"></i> Appointments</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="#"><i class="fas fa-chevron-right"></i> Counseling Guidelines</a></li>
+            <li><a href="#"><i class="fas fa-chevron-right"></i> Emergency Protocols</a></li>
+            <li><a href="#"><i class="fas fa-chevron-right"></i> Student Resources</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Contact Support</h3>
+          <ul>
+            <li><i class="fas fa-envelope"></i> counselors@mindmate.edu</li>
+            <li><i class="fas fa-phone"></i> (+11) 456-7890</li>
+            <li><i class="fas fa-map-marker-alt"></i> Wellness Center, Newtown Campus</li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2025 MindMate. All rights reserved. | Privacy Policy | Terms of Service</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const token = () => localStorage.getItem('counselorToken');
+    let currentFilter = 'today';
+
+    // Authentication guard
+    async function authGuard() {
+      const t = token();
+      if (!t) {
+        window.location.href = 'index.html';
+        return false;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/counselor/me`, {
+          headers: { 'Authorization': `Bearer ${t}` }
+        });
+        if (!res.ok) throw new Error('Unauthorized');
+        const data = await res.json();
+        document.getElementById('counselorNameDisplay').textContent = data.name || data.username;
+        return true;
+      } catch (err) {
+        console.error('Auth failed:', err);
+        localStorage.clear();
+        window.location.href = 'index.html';
+        return false;
+      }
+    }
+
+    // Load appointments
+    async function loadAppointments() {
+      try {
+        const res = await fetch(`${API_BASE}/counselor/appointments`, {
+          headers: { 'Authorization': `Bearer ${token()}` }
+        });
+        if (!res.ok) throw new Error('Failed to load appointments');
+        const appointments = await res.json();
+        renderAppointments(appointments);
+        updateStats(appointments);
+      } catch (err) {
+        console.error('Load appointments error:', err);
+        document.getElementById('appointmentsList').innerHTML = '<p>Error loading appointments</p>';
+      }
+    }
+
+    function renderAppointments(appointments) {
+      const now = new Date();
+      const container = document.getElementById('appointmentsList');
+      
+      let filteredAppointments = appointments.filter(apt => {
+        const aptDate = new Date(apt.datetime);
+        switch (currentFilter) {
+          case 'today':
+            return aptDate.toDateString() === now.toDateString() && apt.status === 'scheduled';
+          case 'upcoming':
+            return aptDate >= now && apt.status === 'scheduled';
+          case 'past':
+            return aptDate < now || apt.status !== 'scheduled';
+          default:
+            return true;
+        }
+      });
+
+      if (filteredAppointments.length === 0) {
+        container.innerHTML = `<p>No ${currentFilter} appointments</p>`;
+        return;
+      }
+
+      container.innerHTML = filteredAppointments.map(apt => `
+        <div class="appointment-item">
+          <div class="appointment-info">
+            <h4>${apt.studentName || apt.studentId}</h4>
+            <div class="appointment-time">${formatDateTime(apt.datetime)}</div>
+            <div class="appointment-student">Student ID: ${apt.studentId}</div>
+            ${apt.reason ? `<div class="appointment-reason">${apt.reason}</div>` : ''}
+            ${apt.notes ? `<div style="margin-top: 8px; color: #666; font-size: 0.9rem;">${apt.notes}</div>` : ''}
+          </div>
+          <div class="appointment-actions">
+            <span class="status-badge status-${apt.status}">${apt.status}</span>
+            ${apt.status === 'scheduled' ? `
+              <button class="btn btn-primary" onclick="completeAppointment('${apt.id}')">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="btn" onclick="cancelAppointment('${apt.id}')">
+                <i class="fas fa-times"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStats(appointments) {
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay());
+      
+      const scheduled = appointments.filter(apt => apt.status === 'scheduled').length;
+      const completedThisWeek = appointments.filter(apt => 
+        apt.status === 'completed' && new Date(apt.datetime) >= weekStart
+      ).length;
+      const cancelledThisWeek = appointments.filter(apt => 
+        apt.status === 'cancelled' && new Date(apt.datetime) >= weekStart
+      ).length;
+
+      document.getElementById('scheduledCount').textContent = scheduled;
+      document.getElementById('completedCount').textContent = completedThisWeek;
+      document.getElementById('cancelledCount').textContent = cancelledThisWeek;
+    }
+
+    async function completeAppointment(appointmentId) {
+      if (!confirm('Mark this appointment as completed?')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/counselor/appointments/${appointmentId}/complete`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token()}` }
+        });
+        
+        if (res.ok) {
+          await loadAppointments();
+        } else {
+          alert('Failed to complete appointment');
+        }
+      } catch (err) {
+        console.error('Complete appointment error:', err);
+        alert('Error completing appointment');
+      }
+    }
+
+    async function cancelAppointment(appointmentId) {
+      if (!confirm('Cancel this appointment?')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/counselor/appointments/${appointmentId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token()}` }
+        });
+        
+        if (res.ok) {
+          await loadAppointments();
+        } else {
+          alert('Failed to cancel appointment');
+        }
+      } catch (err) {
+        console.error('Cancel appointment error:', err);
+        alert('Error cancelling appointment');
+      }
+    }
+
+    function formatDateTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      const authenticated = await authGuard();
+      if (!authenticated) return;
+
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = 'index.html';
+      });
+
+      // Filter buttons
+      document.getElementById('todayBtn').addEventListener('click', () => {
+        currentFilter = 'today';
+        updateFilterButtons();
+        loadAppointments();
+      });
+      
+      document.getElementById('upcomingBtn').addEventListener('click', () => {
+        currentFilter = 'upcoming';
+        updateFilterButtons();
+        loadAppointments();
+      });
+      
+      document.getElementById('pastBtn').addEventListener('click', () => {
+        currentFilter = 'past';
+        updateFilterButtons();
+        loadAppointments();
+      });
+
+      await loadAppointments();
+    });
+
+    function updateFilterButtons() {
+      document.getElementById('todayBtn').className = currentFilter === 'today' ? 'btn btn-primary' : 'btn';
+      document.getElementById('upcomingBtn').className = currentFilter === 'upcoming' ? 'btn btn-primary' : 'btn';
+      document.getElementById('pastBtn').className = currentFilter === 'past' ? 'btn btn-primary' : 'btn';
+    }
+  </script>
+</body>
+</html>
